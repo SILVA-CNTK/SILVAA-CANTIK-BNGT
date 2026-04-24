@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Pink Block Blast 💖</title>
+
+<style>
+body{
+  margin:0;
+  font-family:Arial;
+  background:linear-gradient(135deg,#ff9ad5,#ff4db8);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+}
+
+h1{color:white;}
+
+.grid{
+  display:grid;
+  grid-template-columns:repeat(8,40px);
+  gap:4px;
+  margin-top:10px;
+}
+
+.cell{
+  width:40px;height:40px;
+  background:#fff0f6;
+  border-radius:6px;
+}
+
+.filled{
+  background:#ff1aa3;
+}
+
+.blockArea{
+  margin-top:20px;
+  display:flex;
+  gap:20px;
+}
+
+.block{
+  display:grid;
+  gap:4px;
+  cursor:grab;
+}
+
+.part{
+  width:40px;height:40px;
+  background:#ff1aa3;
+  border-radius:6px;
+}
+</style>
+</head>
+
+<body>
+
+<h1>Pink Block Blast 💖</h1>
+<div id="score" style="color:white;">Score: 0</div>
+
+<div class="grid" id="grid"></div>
+
+<div class="blockArea" id="blocks"></div>
+
+<script>
+let grid = document.getElementById("grid");
+let blocksDiv = document.getElementById("blocks");
+let score = 0;
+
+let cells = [];
+
+// buat grid
+for(let i=0;i<64;i++){
+  let c=document.createElement("div");
+  c.className="cell";
+  grid.appendChild(c);
+  cells.push(c);
+}
+
+// bentuk block
+let shapes = [
+  [[0,0],[1,0],[2,0]], // garis
+  [[0,0],[0,1],[1,1]], // L
+  [[0,0],[1,0],[0,1],[1,1]] // kotak
+];
+
+function createBlock(){
+  let shape = shapes[Math.floor(Math.random()*shapes.length)];
+  let block = document.createElement("div");
+  block.className="block";
+
+  shape.forEach(()=>{
+    let p=document.createElement("div");
+    p.className="part";
+    block.appendChild(p);
+  });
+
+  block.dataset.shape = JSON.stringify(shape);
+  enableDrag(block);
+  return block;
+}
+
+function spawnBlocks(){
+  blocksDiv.innerHTML="";
+  for(let i=0;i<3;i++){
+    blocksDiv.appendChild(createBlock());
+  }
+}
+
+function enableDrag(block){
+  let offsetX, offsetY;
+
+  block.onmousedown = e=>{
+    offsetX = e.offsetX;
+    offsetY = e.offsetY;
+
+    document.onmousemove = e=>{
+      block.style.position="absolute";
+      block.style.left=(e.clientX-offsetX)+"px";
+      block.style.top=(e.clientY-offsetY)+"px";
+    };
+
+    document.onmouseup = ()=>{
+      document.onmousemove=null;
+
+      placeBlock(block);
+    };
+  };
+}
+
+function placeBlock(block){
+  let rect = block.getBoundingClientRect();
+
+  cells.forEach((cell,i)=>{
+    let r = cell.getBoundingClientRect();
+
+    if(
+      rect.left < r.right &&
+      rect.right > r.left &&
+      rect.top < r.bottom &&
+      rect.bottom > r.top
+    ){
+      let shape = JSON.parse(block.dataset.shape);
+
+      shape.forEach(p=>{
+        let x = i%8 + p[0];
+        let y = Math.floor(i/8) + p[1];
+        let idx = y*8 + x;
+
+        if(cells[idx]) cells[idx].classList.add("filled");
+      });
+
+      block.remove();
+      checkLines();
+    }
+  });
+}
+
+function checkLines(){
+  // cek baris
+  for(let y=0;y<8;y++){
+    let full=true;
+    for(let x=0;x<8;x++){
+      if(!cells[y*8+x].classList.contains("filled")){
+        full=false;
+      }
+    }
+    if(full){
+      for(let x=0;x<8;x++){
+        cells[y*8+x].classList.remove("filled");
+      }
+      score+=10;
+    }
+  }
+
+  document.getElementById("score").innerText="Score: "+score;
+}
+
+spawnBlocks();
+</script>
+
+</body>
+</html>
